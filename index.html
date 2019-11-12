@@ -6,50 +6,362 @@
 	<meta charset="utf-8" />
 
 <style>
-html {
-	width: 100%;
-	height: 100%;
-	}
-body {
-	width: 100%;
-	height: 100%;
-	background-color: #000;
-	color: #fff;
-	margin: 0;
-	padding: 20px;
-	font-family: verdana, sans-serif;
-	font-size: 16px;
-	box-sizing: border-box;
-	}
+    /* global */
+
+    body {
+        background-color: #000;
+        color: #ddd;
+        font-family: verdana, sans-serif;
+        font-size: 12px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 93vh;
+        margin: 0;
+    }
+
     .table {
-        text-align: left;
-        border: 1px solid #333;
-        padding: 0 20px;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
+		flex: 0;
+        text-align: center;
+    }
+
+    /* score cards */
+
+    .container {
+        margin-bottom: 20px;
+    }
+
+    .player-score-container {
+        display: inline-block;
+    }
+
+    .player-score {
+        padding: 20px;
+        font-size: 2rem;
+        border: 1px solid #fff;
+        margin-bottom: 5px;
+        width: 83px;
         box-sizing: border-box;
+    }
+
+    .vs {
+        display: inline-block;
+        top: -60px;
+        position: relative;
+        margin: 0 20px;
+    }
+
+    .game-button {
+        color: #fff;
+        background-color: black;
+        border: 2px solid #fff;
+        padding: 3px 10px;
+    }
+
+    /* scoreboard */
+
+    .scoreboard {
+        border: 1px solid #fff;
+        margin: 20px auto;
+        width: 502px;
+        box-sizing: border-box;
+    }
+
+    .scoreboard td, .scoreboard th {
+        padding: 10px;
+        width: 36px;
+        box-sizing: border-box;
+    }
+
+    .win {
+        background-color: green;
+    }
+
+    .lose {
+        background-color: red;
     }
 </style>  
 
 </head>
 <body>
-    <div class="table"></div>
+    <div class="table">
+        <h1>Round <span id="round">1</span></h1>
+        <div class="container">
+            <div class="player-score-container">
+                <div id="player1Score" class="player-score">-</div>
+                <span>Player 1</span>
+            </div>
+            <div class="vs">vs</div>
+            <div class="player-score-container">
+                <div id="player2Score" class="player-score">-</div>
+                <span>Player 2</span>
+            </div>
+        </div>
+        <button class="game-button" id="gameButton">Begin Simulation</button>
+        <table class="scoreboard">
+            <tr>
+                <th>&nbsp;</th>
+                <th>1</th>
+                <th>2</th>
+                <th>3</th>
+                <th>4</th>
+                <th>5</th>
+                <th>6</th>
+                <th>7</th>
+                <th>8</th>
+                <th>9</th>
+                <th>10</th>
+                <th>Total</th>
+            </tr>
+            <tr>
+                <td>Player 1</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>Player 2</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+            </tr>
+        </table>
+    </div>
 <script>
-    var war = (function() {
-
-
-
-        function init() {
-            console.log('Game started!');
+    class War {
+        constructor(decks, suits, values) {
+            console.log('Running...');
+            this.suitsMap = ['diamond', 'club', 'heart', 'spade'];
+            this.dealt = null;
+            this.decks = decks || 1;
+            this.suits = suits || 4;
+            this.values = values || 13;
+            this.numDealt = 0;
+            this.maxCards = this.decks * this.suits * this.values;
+            this.sum = {};
+            this.total = {};
+            this.tiedCards = 0;
+            this.round = 1;
+            this.init();
         }
-    
-        return {
-            init: init
-        };
-    })();
 
-    war.init();
+        shuffle() {
+            this.dealt = new Array(this.decks);
+            for (let i = 0; i < this.decks; i++) {
+                this.dealt[i] = new Array(this.suits);
+                for (let j = 0; j < this.suits; j++) {
+                    this.dealt[i][j] = new Array(this.values + 1);
+                }
+            }
+        }
+
+        reShuffle() {
+            for (let i = 0; i < this.decks; i++) {
+                for (let j = 0; j < this.suits; j++) {
+                    for (let k = 1; k <= this.values; k++) {
+                        this.dealt[i][j][k] = 0;
+                    }
+                }
+            }
+        }
+				
+        drawCard() {
+            let val, suit, card;
+            do {
+                val = (Math.floor(Math.random() * this.values)) + 1;
+                suit = Math.floor(Math.random() * this.suits);
+                card = { val, suit };
+            } while (!this.isUnique(card));
+            this.record(card);
+            return card;
+            
+        }
+
+        record(card) {
+            const list = this.dealt;
+            this.numDealt++;
+            for (let i = 0; i < this.decks; i++) {
+                if (!list[i][card.suit][card.val]) {
+                    list[i][card.suit][card.val] = 1;
+                    break;
+                }
+            }
+        }
+
+        isUnique(card) {
+            if (this.numDealt >= this.maxCards) {
+                this.numDealt = 0;
+                this.reShuffle();
+                return true;
+            }
+            let checked = 0;
+            for (let i = 0; i < this.decks; i++) {
+                if (this.dealt[i][card.suit][card.val]) {
+                    checked++;
+                }
+            }
+            return !(checked === this.decks);
+        }
+
+        deal(person) {
+            let sum = 0;
+            let card = this.drawCard();
+            
+            return card.val;
+        }
+
+        compute(val1, val2) {            
+            if ((val1 === 1 && val2 !== 1) || val1 > val2) {
+                this.sum.player1 = this.sum.player1 + 2 + this.tiedCards;
+                this.tiedCards = 0;
+            } else if ((val2 === 1 && val1 !== 1) || val2 > val1) {
+                this.sum.player2 = this.sum.player2 + 2 + this.tiedCards;
+                this.tiedCards = 0;
+            } else {
+                this.tiedCards = this.tiedCards + 2;
+                if (this.numDealt < this.maxCards) {
+                    this.compute(this.deal('player1'), this.deal('player2'));
+                }
+            }
+
+            //console.log(val1, val2, this.sum.player1, this.sum.player2, this.numDealt, this.maxCards);
+        }
+
+        doRound() {
+            if (this.round > 10) {
+                this.round = 1;
+            }
+            this.sum.player1 = 0;
+            this.sum.player2 = 0;
+            this.renderRound();
+
+            while (this.numDealt < this.maxCards) {
+                this.compute(this.deal('player1'), this.deal('player2'));
+            }
+
+            this.computeTotal();
+            this.renderScoreCards();
+            this.renderScoreBoard();
+
+            this.numDealt = 0;
+            this.sum.player1 = 0;
+            this.sum.player2 = 0;
+            this.reShuffle();
+            this.round++;
+        }
+
+        computeTotal() {
+            this.total.player1 = this.total.player1 + this.sum.player1;
+            this.total.player2 = this.total.player2 + this.sum.player2;
+        }
+
+        events() {
+            const $container = document.getElementById('gameButton');
+            
+            $container.addEventListener('click', (e) => {
+                const buttonText = e.target.textContent;
+
+                if (buttonText.includes('Simulation') || buttonText.includes('New')) {
+                    e.target.textContent = 'Start Next Round';
+                    this.renderCleanScoreBoard();
+                    this.total.player1 = 0;
+                    this.total.player2 = 0;
+                } else if (this.round >= 10) {
+                    e.target.textContent = 'Start New Game';
+                }
+
+                this.doRound();
+                
+            }, true);
+        
+        }
+
+        renderRound() {
+            const $container1 = document.getElementById('round');
+
+            $container1.innerHTML = this.round;
+        }
+
+        renderScoreCards() {
+            const $container1 = document.getElementById('player1Score');
+            const $container2 = document.getElementById('player2Score');
+
+            $container1.innerHTML = this.sum.player1;
+            $container2.innerHTML = this.sum.player2;
+        }
+
+        renderScoreBoard() {
+            const $container1 = document.querySelector(`.scoreboard tr:nth-child(2) td:nth-child(${this.round + 1})`);
+            const $container2 = document.querySelector(`.scoreboard tr:nth-child(3) td:nth-child(${this.round + 1})`);
+            const $total1 = document.querySelector(`.scoreboard tr:nth-child(2) td:nth-child(12)`);
+            const $total2 = document.querySelector(`.scoreboard tr:nth-child(3) td:nth-child(12)`);
+
+            $container1.innerHTML = this.sum.player1;
+            $container2.innerHTML = this.sum.player2;
+
+            if (this.sum.player1 > this.sum.player2) {
+                $container1.className = 'win';
+                $container2.className = 'lose';
+            } else if (this.sum.player2 > this.sum.player1) {
+                $container1.className = 'lose';
+                $container2.className = 'win';
+            }
+
+            $total1.innerHTML = this.total.player1;
+            $total2.innerHTML = this.total.player2;
+
+            if (this.total.player1 > this.total.player2) {
+                $total1.className = 'win';
+                $total2.className = 'lose';
+            } else if (this.total.player2 > this.total.player1) {
+                $total1.className = 'lose';
+                $total2.className = 'win';
+            }            
+        }
+
+        renderCleanScoreBoard() {
+            const $list = document.querySelectorAll('.scoreboard td');
+
+            $list.forEach(item => {
+                if (!item.innerHTML.includes('Player')) {
+                    item.innerHTML = '-';
+                    item.className = '';
+                }
+            });
+        }
+
+        init() {
+            this.shuffle();
+            this.events();
+        }
+    }
+    
+    War.BUTTONS = (function() {
+        let obj = {};
+        let list = ['Deal', 'Hit', 'Stay', '2x', 'Split'];
+        for (let i = list.length; i--;) {
+            obj[list[i].toUpperCase()] = list[i].toLowerCase();
+        }
+        return obj;
+    }());
+    
+    new War();
 </script>
 </body>
 </html>
